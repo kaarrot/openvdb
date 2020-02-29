@@ -27,24 +27,24 @@ static const std::string sINDENT(INDENT);
 #if OPENVDB_ABI_VERSION_NUMBER >= 6
 struct PointStats{
 // Helper structs to collect point information
-struct PointAttrib{
-    Name name = "";
-    Name type = "";
-    Name codec = "";
-    Index64 index = 0;
-    bool isUniform = true;
-    bool isShared = false;
-    // flags
-    bool isHidden = false;
-    bool isTransient = false;
-    bool isStreaming = false;
-};
+// struct PointAttrib{
+//     Name name = "";
+//     Name type = "";
+//     Name codec = "";
+//     Index64 index = 0;
+//     bool isUniform = true;
+//     bool isShared = false;
+//     // flags
+//     bool isHidden = false;
+//     bool isTransient = false;
+//     bool isStreaming = false;
+// };
 struct Points{
     Index64 total = 0;
     Index64 active = 0;
     Index64 inactive = 0;
     std::map<Name, Index64> groups;
-    std::map<Name, PointAttrib> pointAttribs;
+    std::map<Name, AttributeSet::Info::Array> pointAttribs;  // TODO renmae array info
 };
 
 static void
@@ -73,20 +73,27 @@ inspectPoints(const openvdb::GridBase::ConstPtr grid, Points& points)
         }
 
         // Collect attribute info
+        // TODO only for first leaf
+        AttributeSet::Info info(dptr);
+        // AttributeSet::Info info(attrSet);
+        
         for (auto it=attrmap.begin(); it!=attrmap.end(); ++it){
-            PointAttrib pa{};
-            pa.name = it->first;
-            pa.index = it->second;
-            pa.type = dptr->valueType(pa.index);
-            pa.isShared = attrset.isShared(pa.index);
+            AttributeSet::Info::Array& arrInfo = info.arrayInfo(it->first);
+        
+            //     PointAttrib pa{};
+        //     pa.name = it->first;
+        //     pa.index = it->second;
+        //     pa.type = dptr->valueType(pa.index);
+        //     pa.isShared = attrset.isShared(pa.index);
 
-            auto attrArr = attrset.getConst(pa.name);
-            pa.codec = attrArr->codecType();
-            pa.isUniform = attrArr->isUniform();
-            pa.isHidden = attrArr->isHidden();
-            pa.isTransient = attrArr->isTransient();
-            pa.isStreaming = attrArr->isStreaming();
-            points.pointAttribs[pa.name] = pa;
+        //     auto attrArr = attrset.getConst(pa.name);
+        //     pa.codec = attrArr->codecType();
+        //     pa.isUniform = attrArr->isUniform();
+        //     pa.isHidden = attrArr->isHidden();
+        //     pa.isTransient = attrArr->isTransient();
+        //     pa.isStreaming = attrArr->isStreaming();
+            
+            points.pointAttribs[it->first] = std::move(arrInfo);
         }
     }
 }
@@ -101,15 +108,15 @@ printPointStats(const Points& pointStats)
         std::cout << "Point attributes:" << '\n';
         for(auto it=pointStats.pointAttribs.begin(); it!=pointStats.pointAttribs.end(); ++it){
             auto attr = it->second;
-            std::cout << "name: " << attr.name << '\n';
-            std::cout << sINDENT << "index: " << attr.index << '\n';
-            std::cout << sINDENT << "type: " << attr.type << '\n';
-            std::cout << sINDENT << "codec: " << attr.codec << '\n';
-            std::cout << sINDENT << "isUniform: " << attr.isUniform << '\n';
-            std::cout << sINDENT << "isShared: " << attr.isShared << '\n';
-            std::cout << sINDENT << "isHidden: " << attr.isHidden << '\n';
-            std::cout << sINDENT << "isTransient: " << attr.isTransient << '\n';
-            std::cout << sINDENT << "isStreaming: " << attr.isStreaming << '\n';
+            std::cout << "name: " << it->first << '\n';
+            // std::cout << sINDENT << "index: " << attr.index << '\n';
+            // std::cout << sINDENT << "type: " << attr.type << '\n';
+            // std::cout << sINDENT << "codec: " << attr.codec << '\n';
+            // std::cout << sINDENT << "isUniform: " << attr.isUniform << '\n';
+            // std::cout << sINDENT << "isShared: " << attr.isShared << '\n';
+            // std::cout << sINDENT << "isHidden: " << attr.isHidden << '\n';
+            // std::cout << sINDENT << "isTransient: " << attr.isTransient << '\n';
+            // std::cout << sINDENT << "isStreaming: " << attr.isStreaming << '\n';
           }
         std::cout << "Point groups:" << '\n';
         for (auto it=pointStats.groups.begin(); it!=pointStats.groups.end(); ++it){
@@ -118,6 +125,72 @@ printPointStats(const Points& pointStats)
 }
 };
 #endif
+
+
+    /*
+
+#1
+if OPENVDB_ABI_VERSION_NUMBER >= 6
+            // Check for grid type, inspect points if this is a point grid
+            const openvdb::GridBase::ConstPtr grid = *it;
+  @Idclip
+Idclip 2 days ago  Contributor
+I'd move this to the start of the loop so the shared pointer is only copied once, immediately followed by a check
+
+
+#2
+  // Check for grid type, inspect points if this is a point grid
+            const openvdb::GridBase::ConstPtr grid = *it;
+            Name gridType = grid->type();
+            if (gridType.find("ptdata") != std::string::npos)
+  @Idclip
+Idclip 2 days ago  Contributor
+Don't bother with this nametype check, you can call GridBase::grid<T> with the grid and check the resulting ptr
+
+
+#3 
+  pa.isStreaming = attrArr->isStreaming();
+            points.pointAttribs[pa.name] = pa;
+        }
+    }
+  @Idclip
+Idclip 2 days ago  • 
+ Contributor
+I'm not sure how useful this multi leaf implementation is. In most cases the attributes will be consistent across the VDB, and even if they are not, this doesn't provide a way to infer exactly how the attributes are spread. My vote would be to simply inspect the first leaf and infer the attributes from that. You could then check to see if the descriptor is shared and, if it isn't, simply print a warning that the attribute layouts are not consistent.
+
+#4 provide the output
+
+
+#5 
+
+static const std::string sINDENT(INDENT);
+
+ #if OPENVDB_ABI_VERSION_NUMBER >= 6
+  @Idclip
+Idclip 2 days ago  Contributor
+I don't think you need to ABI switch this. I think the only methods you're using which are ABI6 only are codecType and valueType, both of which you can query from the descriptor using valueType() and type()
+
+
+
+#6
+
+ }
+        // Print out point stats only if there are any points
+        if (pointStats.total != 0) PointStats::printPointStats(pointStats);
+  @Idclip
+Idclip 2 days ago  Contributor
+We would still want to print some information to show the grid is empty, as it may contain topology but no points
+
+
+#7
+
+using namespace openvdb;
+using namespace openvdb::points;
+  @Idclip
+Idclip 2 days ago  Contributor
+If we're to do this, I'd remove all usage of the openvdb:: namespace - but as you've opted for auto in most places, I don't think we even need this and can use openvdb::points where necessary
+
+     */
 
 void
 usage [[noreturn]] (int exitStatus = EXIT_FAILURE)
@@ -232,7 +305,7 @@ printLongListing(const StringVec& filenames)
         std::cout << "\n";
 #if OPENVDB_ABI_VERSION_NUMBER >= 6
         PointStats::Points pointStats;
-#endif
+#endif        
         // For each grid in the file...
         bool firstGrid = true;
         for (openvdb::GridPtrVec::const_iterator it = grids->begin(); it != grids->end(); ++it) {
@@ -397,17 +470,17 @@ main(int argc, char *argv[])
         openvdb::initialize();
 
         /// @todo Remove the following at some point:
-        openvdb::Grid<openvdb::tree::Tree4<bool, 4, 3, 3>::Type>::registerGrid();
-        openvdb::Grid<openvdb::tree::Tree4<float, 4, 3, 3>::Type>::registerGrid();
-        openvdb::Grid<openvdb::tree::Tree4<double, 4, 3, 3>::Type>::registerGrid();
-        openvdb::Grid<openvdb::tree::Tree4<int32_t, 4, 3, 3>::Type>::registerGrid();
-        openvdb::Grid<openvdb::tree::Tree4<int64_t, 4, 3, 3>::Type>::registerGrid();
-        openvdb::Grid<openvdb::tree::Tree4<openvdb::Vec2i, 4, 3, 3>::Type>::registerGrid();
-        openvdb::Grid<openvdb::tree::Tree4<openvdb::Vec2s, 4, 3, 3>::Type>::registerGrid();
-        openvdb::Grid<openvdb::tree::Tree4<openvdb::Vec2d, 4, 3, 3>::Type>::registerGrid();
-        openvdb::Grid<openvdb::tree::Tree4<openvdb::Vec3i, 4, 3, 3>::Type>::registerGrid();
-        openvdb::Grid<openvdb::tree::Tree4<openvdb::Vec3f, 4, 3, 3>::Type>::registerGrid();
-        openvdb::Grid<openvdb::tree::Tree4<openvdb::Vec3d, 4, 3, 3>::Type>::registerGrid();
+        // openvdb::Grid<openvdb::tree::Tree4<bool, 4, 3, 3>::Type>::registerGrid();
+        // openvdb::Grid<openvdb::tree::Tree4<float, 4, 3, 3>::Type>::registerGrid();
+        // openvdb::Grid<openvdb::tree::Tree4<double, 4, 3, 3>::Type>::registerGrid();
+        // openvdb::Grid<openvdb::tree::Tree4<int32_t, 4, 3, 3>::Type>::registerGrid();
+        // openvdb::Grid<openvdb::tree::Tree4<int64_t, 4, 3, 3>::Type>::registerGrid();
+        // openvdb::Grid<openvdb::tree::Tree4<openvdb::Vec2i, 4, 3, 3>::Type>::registerGrid();
+        // openvdb::Grid<openvdb::tree::Tree4<openvdb::Vec2s, 4, 3, 3>::Type>::registerGrid();
+        // openvdb::Grid<openvdb::tree::Tree4<openvdb::Vec2d, 4, 3, 3>::Type>::registerGrid();
+        // openvdb::Grid<openvdb::tree::Tree4<openvdb::Vec3i, 4, 3, 3>::Type>::registerGrid();
+        // openvdb::Grid<openvdb::tree::Tree4<openvdb::Vec3f, 4, 3, 3>::Type>::registerGrid();
+        // openvdb::Grid<openvdb::tree::Tree4<openvdb::Vec3d, 4, 3, 3>::Type>::registerGrid();
 
         if (stats) {
             printLongListing(filenames);
