@@ -134,7 +134,7 @@ if OPENVDB_ABI_VERSION_NUMBER >= 6
             // Check for grid type, inspect points if this is a point grid
             const openvdb::GridBase::ConstPtr grid = *it;
   @Idclip
-Idclip 2 days ago  Contributor
+
 I'd move this to the start of the loop so the shared pointer is only copied once, immediately followed by a check
 
 
@@ -309,7 +309,8 @@ printLongListing(const StringVec& filenames)
         // For each grid in the file...
         bool firstGrid = true;
         for (openvdb::GridPtrVec::const_iterator it = grids->begin(); it != grids->end(); ++it) {
-            if (openvdb::GridBase::ConstPtr grid = *it) {
+            const openvdb::GridBase::ConstPtr grid = *it;
+            if (grid) {
                 if (!firstGrid) std::cout << "\n\n";
                 std::cout << "Name: " << grid->getName() << std::endl;
                 grid->print(std::cout, /*verboseLevel=*/11);
@@ -317,7 +318,6 @@ printLongListing(const StringVec& filenames)
             }
 #if OPENVDB_ABI_VERSION_NUMBER >= 6
             // Check for grid type, inspect points if this is a point grid
-            const openvdb::GridBase::ConstPtr grid = *it;
             Name gridType = grid->type();
             if (gridType.find("ptdata") != std::string::npos)
                 PointStats::inspectPoints(grid, pointStats);
