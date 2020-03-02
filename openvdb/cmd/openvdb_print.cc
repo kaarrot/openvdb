@@ -19,7 +19,6 @@ using StringVec = std::vector<std::string>;
 
 const char* INDENT = "   ";
 const char* gProgName = "";
-static const std::string sINDENT(INDENT);
 
 struct PointStats{
     using Index64 = openvdb::Index64;
@@ -28,16 +27,15 @@ struct PointStats{
     using AttributeSet = openvdb::points::AttributeSet;
     using PointDataGrid = openvdb::points::PointDataGrid;
 
-    // proxy struct to collect all attributes
+    // proxy collect attributes not covered by AttributeSet::Info::Array
     struct PointAttrib{
         AttributeSet::Info::Array array;
-        Name type = "";
-        Name codec = "";
         Index64 index = 0;
-        bool isUniform = true;
-        bool isShared = false;    
+        bool shared = false;
+        bool uniform = true;
+        Name codec = "";
+        Name type = "";
     };
-
 
     Index64 total = 0;
     Index64 active = 0;
@@ -48,7 +46,7 @@ struct PointStats{
 
 
 static void
-inspectPoints(const openvdb::GridBase::ConstPtr grid, PointStats& points)
+inspectPoints(const openvdb::GridBase::ConstPtr grid, PointStats& pointStats)
 {
     PointDataGrid::ConstPtr inputGrid = GridBase::grid<PointDataGrid>(grid);
 
@@ -57,60 +55,67 @@ inspectPoints(const openvdb::GridBase::ConstPtr grid, PointStats& points)
         auto dptr = attrset.descriptorPtr();
         auto attrmap = dptr->map();
 
-        points.total += leafIter->pointCount();
-        points.active += leafIter->onPointCount();
-        points.inactive += leafIter->offPointCount();
+        pointStats.total += leafIter->pointCount();
+        pointStats.active += leafIter->onPointCount();
+        pointStats.inactive += leafIter->offPointCount();
 
         // groups
         auto grmap = dptr->groupMap();
 
         // Count points in groups
         for (auto it=grmap.begin(); it!=grmap.end(); ++it){
-            if(points.groups.find(it->first) == points.groups.end()){
-                points.groups[it->first] = 0;
+            if(pointStats.groups.find(it->first) == pointStats.groups.end()){
+                pointStats.groups[it->first] = 0;
             }
-            points.groups[it->first]+=leafIter->groupPointCount(it->first);
+            pointStats.groups[it->first]+=leafIter->groupPointCount(it->first);
         }
 
         // Collect attribute info - gather attributes info from the first leaf only.
         // (Assume consistency across leaves).
         AttributeSet::Info info(dptr);
-        if (!points.firstLeaf) continue;
+        if (!pointStats.firstLeaf) continue;
         for (auto it=attrmap.begin(); it!=attrmap.end(); ++it){
             AttributeSet::Info::Array& arrInfo = info.arrayInfo(it->first);
             auto attrArr = attrset.getConst(it->first /*name*/);
             PointAttrib pa{};
             pa.array = std::move(arrInfo);
-            // points.attribs[it->first] = 
+            pa.type = dptr->valueType(pa.index);
+            pa.index = it->second;
+            pa.shared = attrset.isShared(pa.index);
+            // pa.codec = dptr->valueType(pa.index);
+            pa.codec = attrArr->codecType();
+            pa.uniform = attrArr->isUniform();
+            pointStats.attribs[it->first] = pa;
         }
-        points.firstLeaf = false;
+        pointStats.firstLeaf = false;
     }
 }
 
 static void
 printPointStats(const PointStats& pointStats)
 {
-
     std::cout << "Total Point Count:\n"
-              << sINDENT << "total: " << pointStats.total << '\n'
-              << sINDENT << "active: " << pointStats.active  << '\n'
-              << sINDENT << "inactive: " << pointStats.inactive << '\n';
+              << INDENT << "total: " << pointStats.total << '\n'
+              << INDENT << "active: " << pointStats.active  << '\n'
+              << INDENT << "inactive: " << pointStats.inactive << '\n';
 
     std::cout << "Point attributes:" << '\n';
     for(auto it=pointStats.attribs.begin(); it!=pointStats.attribs.end(); ++it){
         auto attr = it->second;
-        std::cout << "name: " << it->first << '\n';
-        // std::cout << sINDENT << "type: " << attr.type << '\n';
-        // std::cout << sINDENT << "codec: " << attr.codec << '\n';
-        // std::cout << sINDENT << "isUniform: " << attr.isUniform << '\n';
-        // std::cout << sINDENT << "isShared: " << attr.isShared << '\n';
-        // std::cout << sINDENT << "isHidden: " << attr.isHidden << '\n';
-        // std::cout << sINDENT << "isTransient: " << attr.isTransient << '\n';
-        // std::cout << sINDENT << "isStreaming: " << attr.isStreaming << '\n';
+        std::cout << "  name: " << it->first << '\n';
+        std::cout << INDENT << "type: " << attr.type << '\n';
+        std::cout << INDENT << "codec: " << attr.codec << '\n';
+        std::cout << INDENT << "uniform: " << attr.uniform << '\n';
+        std::cout << INDENT << "shared: " << attr.shared << '\n';
+        std::cout << INDENT << "hidden: " << attr.array.hidden << '\n';
+        std::cout << INDENT << "transient: " << attr.array.transient << '\n';
+        std::cout << INDENT << "group: " << attr.array.group << '\n';
+        std::cout << INDENT << "string: " << attr.array.string << '\n';
+        std::cout << INDENT << "constantStride: " << attr.array.constantStride << '\n';
     }
     std::cout << "Point groups:" << '\n';
     for (auto it=pointStats.groups.begin(); it!=pointStats.groups.end(); ++it){
-        std::cout << it->first << " " << it->second <<std::endl;
+        std::cout << INDENT << it->first << ": " << it->second << '\n';
     }
 }
 };
