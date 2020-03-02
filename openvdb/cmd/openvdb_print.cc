@@ -25,19 +25,30 @@ struct PointStats{
     using Index64 = openvdb::Index64;
     using Name = openvdb::Name;
     using GridBase  = openvdb::GridBase;
-    using AttributeSet = openvdb::points::AttributeSet;   
+    using AttributeSet = openvdb::points::AttributeSet;
     using PointDataGrid = openvdb::points::PointDataGrid;
-struct Points{
+
+    // proxy struct to collect all attributes
+    struct PointAttrib{
+        AttributeSet::Info::Array array;
+        Name type = "";
+        Name codec = "";
+        Index64 index = 0;
+        bool isUniform = true;
+        bool isShared = false;    
+    };
+
+
     Index64 total = 0;
     Index64 active = 0;
     Index64 inactive = 0;
     bool firstLeaf = true;
     std::map<Name, Index64> groups;
-    std::map<Name, AttributeSet::Info::Array> pointAttribs;  // TODO renmae array info
-};
+    std::map<Name, PointAttrib> attribs;
+
 
 static void
-inspectPoints(const openvdb::GridBase::ConstPtr grid, Points& points)
+inspectPoints(const openvdb::GridBase::ConstPtr grid, PointStats& points)
 {
     PointDataGrid::ConstPtr inputGrid = GridBase::grid<PointDataGrid>(grid);
 
@@ -67,14 +78,17 @@ inspectPoints(const openvdb::GridBase::ConstPtr grid, Points& points)
         if (!points.firstLeaf) continue;
         for (auto it=attrmap.begin(); it!=attrmap.end(); ++it){
             AttributeSet::Info::Array& arrInfo = info.arrayInfo(it->first);
-            points.pointAttribs[it->first] = std::move(arrInfo);
+            auto attrArr = attrset.getConst(it->first /*name*/);
+            PointAttrib pa{};
+            pa.array = std::move(arrInfo);
+            // points.attribs[it->first] = 
         }
         points.firstLeaf = false;
     }
 }
 
 static void
-printPointStats(const Points& pointStats)
+printPointStats(const PointStats& pointStats)
 {
 
     std::cout << "Total Point Count:\n"
@@ -83,10 +97,9 @@ printPointStats(const Points& pointStats)
               << sINDENT << "inactive: " << pointStats.inactive << '\n';
 
     std::cout << "Point attributes:" << '\n';
-    for(auto it=pointStats.pointAttribs.begin(); it!=pointStats.pointAttribs.end(); ++it){
+    for(auto it=pointStats.attribs.begin(); it!=pointStats.attribs.end(); ++it){
         auto attr = it->second;
         std::cout << "name: " << it->first << '\n';
-        // std::cout << sINDENT << "index: " << attr.index << '\n';
         // std::cout << sINDENT << "type: " << attr.type << '\n';
         // std::cout << sINDENT << "codec: " << attr.codec << '\n';
         // std::cout << sINDENT << "isUniform: " << attr.isUniform << '\n';
@@ -287,7 +300,7 @@ printLongListing(const StringVec& filenames)
         }
         std::cout << "\n";
 
-        PointStats::Points pointStats;
+        PointStats pointStats;
 
         // For each grid in the file...
         bool firstGrid = true;
