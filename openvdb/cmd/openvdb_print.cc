@@ -13,9 +13,6 @@
 
 #include <openvdb/points/PointDataGrid.h>
 
-using namespace openvdb;
-using namespace openvdb::points;
-
 namespace {
 
 using StringVec = std::vector<std::string>;
@@ -25,6 +22,11 @@ const char* gProgName = "";
 static const std::string sINDENT(INDENT);
 
 struct PointStats{
+    using Index64 = openvdb::Index64;
+    using Name = openvdb::Name;
+    using GridBase  = openvdb::GridBase;
+    using AttributeSet = openvdb::points::AttributeSet;   
+    using PointDataGrid = openvdb::points::PointDataGrid;
 struct Points{
     Index64 total = 0;
     Index64 active = 0;
@@ -153,7 +155,7 @@ I don't think you need to ABI switch this. I think the only methods you're using
 
 
 
-#6
+#6  DONE
 
  }
         // Print out point stats only if there are any points
@@ -299,7 +301,7 @@ printLongListing(const StringVec& filenames)
             }
 
             // Inspect points if this is a point grid
-            if (GridBase::grid<PointDataGrid>(grid))
+            if (openvdb::GridBase::grid<openvdb::points::PointDataGrid>(grid))
                 PointStats::inspectPoints(grid, pointStats);
         }
 
