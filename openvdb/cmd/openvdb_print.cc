@@ -43,6 +43,7 @@ struct Points{
     Index64 total = 0;
     Index64 active = 0;
     Index64 inactive = 0;
+    bool firstLeaf = true;
     std::map<Name, Index64> groups;
     std::map<Name, AttributeSet::Info::Array> pointAttribs;  // TODO renmae array info
 };
@@ -76,7 +77,10 @@ inspectPoints(const openvdb::GridBase::ConstPtr grid, Points& points)
         // TODO only for first leaf
         AttributeSet::Info info(dptr);
         // AttributeSet::Info info(attrSet);
-        
+
+        // Gather attributes info from the first leaf only.
+        // (Assume consistency of attributes across leaves).
+        if (!points.firstLeaf) continue;
         for (auto it=attrmap.begin(); it!=attrmap.end(); ++it){
             AttributeSet::Info::Array& arrInfo = info.arrayInfo(it->first);
         
@@ -95,6 +99,7 @@ inspectPoints(const openvdb::GridBase::ConstPtr grid, Points& points)
             
             points.pointAttribs[it->first] = std::move(arrInfo);
         }
+        points.firstLeaf = false;
     }
 }
 
