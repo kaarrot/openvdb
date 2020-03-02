@@ -24,7 +24,6 @@ const char* INDENT = "   ";
 const char* gProgName = "";
 static const std::string sINDENT(INDENT);
 
-#if OPENVDB_ABI_VERSION_NUMBER >= 6
 struct PointStats{
 struct Points{
     Index64 total = 0;
@@ -98,8 +97,6 @@ printPointStats(const Points& pointStats)
         }
 }
 };
-#endif
-
 
     /*
 
@@ -277,9 +274,9 @@ printLongListing(const StringVec& filenames)
             if (!str.empty()) std::cout << str << "\n";
         }
         std::cout << "\n";
-#if OPENVDB_ABI_VERSION_NUMBER >= 6
+
         PointStats::Points pointStats;
-#endif        
+
         // For each grid in the file...
         bool firstGrid = true;
         for (openvdb::GridPtrVec::const_iterator it = grids->begin(); it != grids->end(); ++it) {
@@ -290,14 +287,14 @@ printLongListing(const StringVec& filenames)
                 grid->print(std::cout, /*verboseLevel=*/11);
                 firstGrid = false;
             }
-#if OPENVDB_ABI_VERSION_NUMBER >= 6
+
             // Inspect points if this is a point grid
             if (GridBase::grid<PointDataGrid>(grid))
                 PointStats::inspectPoints(grid, pointStats);
         }
         // Print out point stats only if there are any points
         if (pointStats.total != 0) PointStats::printPointStats(pointStats);
-#else
+
         }
 #endif
     }
