@@ -26,19 +26,6 @@ static const std::string sINDENT(INDENT);
 
 #if OPENVDB_ABI_VERSION_NUMBER >= 6
 struct PointStats{
-// Helper structs to collect point information
-// struct PointAttrib{
-//     Name name = "";
-//     Name type = "";
-//     Name codec = "";
-//     Index64 index = 0;
-//     bool isUniform = true;
-//     bool isShared = false;
-//     // flags
-//     bool isHidden = false;
-//     bool isTransient = false;
-//     bool isStreaming = false;
-// };
 struct Points{
     Index64 total = 0;
     Index64 active = 0;
@@ -73,30 +60,12 @@ inspectPoints(const openvdb::GridBase::ConstPtr grid, Points& points)
             points.groups[it->first]+=leafIter->groupPointCount(it->first);
         }
 
-        // Collect attribute info
-        // TODO only for first leaf
+        // Collect attribute info - gather attributes info from the first leaf only.
+        // (Assume consistency across leaves).
         AttributeSet::Info info(dptr);
-        // AttributeSet::Info info(attrSet);
-
-        // Gather attributes info from the first leaf only.
-        // (Assume consistency of attributes across leaves).
         if (!points.firstLeaf) continue;
         for (auto it=attrmap.begin(); it!=attrmap.end(); ++it){
             AttributeSet::Info::Array& arrInfo = info.arrayInfo(it->first);
-        
-            //     PointAttrib pa{};
-        //     pa.name = it->first;
-        //     pa.index = it->second;
-        //     pa.type = dptr->valueType(pa.index);
-        //     pa.isShared = attrset.isShared(pa.index);
-
-        //     auto attrArr = attrset.getConst(pa.name);
-        //     pa.codec = attrArr->codecType();
-        //     pa.isUniform = attrArr->isUniform();
-        //     pa.isHidden = attrArr->isHidden();
-        //     pa.isTransient = attrArr->isTransient();
-        //     pa.isStreaming = attrArr->isStreaming();
-            
             points.pointAttribs[it->first] = std::move(arrInfo);
         }
         points.firstLeaf = false;
