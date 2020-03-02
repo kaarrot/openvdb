@@ -129,7 +129,7 @@ printPointStats(const Points& pointStats)
 
     /*
 
-#1
+#1 DONE
 if OPENVDB_ABI_VERSION_NUMBER >= 6
             // Check for grid type, inspect points if this is a point grid
             const openvdb::GridBase::ConstPtr grid = *it;
@@ -319,6 +319,8 @@ printLongListing(const StringVec& filenames)
 #if OPENVDB_ABI_VERSION_NUMBER >= 6
             // Check for grid type, inspect points if this is a point grid
             Name gridType = grid->type();
+            auto ptr = GridBase::grid<PointDataGrid>(grid);
+            std::cout << ptr<< std::endl;
             if (gridType.find("ptdata") != std::string::npos)
                 PointStats::inspectPoints(grid, pointStats);
         }
