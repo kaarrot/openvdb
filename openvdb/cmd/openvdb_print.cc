@@ -74,31 +74,41 @@ inspectPoints(const openvdb::GridBase::ConstPtr grid, Points& points)
 static void
 printPointStats(const Points& pointStats)
 {
-        std::cout << "Total Point Count:\n"
-            << sINDENT << "total: " << pointStats.total << '\n'
-            << sINDENT << "active: " << pointStats.active  << '\n'
-            << sINDENT << "inactive: " << pointStats.inactive << '\n';
-        std::cout << "Point attributes:" << '\n';
-        for(auto it=pointStats.pointAttribs.begin(); it!=pointStats.pointAttribs.end(); ++it){
-            auto attr = it->second;
-            std::cout << "name: " << it->first << '\n';
-            // std::cout << sINDENT << "index: " << attr.index << '\n';
-            // std::cout << sINDENT << "type: " << attr.type << '\n';
-            // std::cout << sINDENT << "codec: " << attr.codec << '\n';
-            // std::cout << sINDENT << "isUniform: " << attr.isUniform << '\n';
-            // std::cout << sINDENT << "isShared: " << attr.isShared << '\n';
-            // std::cout << sINDENT << "isHidden: " << attr.isHidden << '\n';
-            // std::cout << sINDENT << "isTransient: " << attr.isTransient << '\n';
-            // std::cout << sINDENT << "isStreaming: " << attr.isStreaming << '\n';
-          }
-        std::cout << "Point groups:" << '\n';
-        for (auto it=pointStats.groups.begin(); it!=pointStats.groups.end(); ++it){
-            std::cout << it->first << " " << it->second <<std::endl;
-        }
+
+    std::cout << "Total Point Count:\n"
+              << sINDENT << "total: " << pointStats.total << '\n'
+              << sINDENT << "active: " << pointStats.active  << '\n'
+              << sINDENT << "inactive: " << pointStats.inactive << '\n';
+
+    std::cout << "Point attributes:" << '\n';
+    for(auto it=pointStats.pointAttribs.begin(); it!=pointStats.pointAttribs.end(); ++it){
+        auto attr = it->second;
+        std::cout << "name: " << it->first << '\n';
+        // std::cout << sINDENT << "index: " << attr.index << '\n';
+        // std::cout << sINDENT << "type: " << attr.type << '\n';
+        // std::cout << sINDENT << "codec: " << attr.codec << '\n';
+        // std::cout << sINDENT << "isUniform: " << attr.isUniform << '\n';
+        // std::cout << sINDENT << "isShared: " << attr.isShared << '\n';
+        // std::cout << sINDENT << "isHidden: " << attr.isHidden << '\n';
+        // std::cout << sINDENT << "isTransient: " << attr.isTransient << '\n';
+        // std::cout << sINDENT << "isStreaming: " << attr.isStreaming << '\n';
+    }
+    std::cout << "Point groups:" << '\n';
+    for (auto it=pointStats.groups.begin(); it!=pointStats.groups.end(); ++it){
+        std::cout << it->first << " " << it->second <<std::endl;
+    }
 }
 };
 
     /*
+
+TODO:
+test caseses:
+1: no point grids
+2 pointgrid  no groups (multiple atrtributes)
+3 pointgrid with groups
+4 pointgrid without points
+
 
 #1 DONE
 if OPENVDB_ABI_VERSION_NUMBER >= 6
@@ -119,7 +129,7 @@ Idclip 2 days ago  Contributor
 Don't bother with this nametype check, you can call GridBase::grid<T> with the grid and check the resulting ptr
 
 
-#3 
+#3 DONE
   pa.isStreaming = attrArr->isStreaming();
             points.pointAttribs[pa.name] = pa;
         }
@@ -132,7 +142,7 @@ I'm not sure how useful this multi leaf implementation is. In most cases the att
 #4 provide the output
 
 
-#5 
+#5 DONE
 
 static const std::string sINDENT(INDENT);
 
@@ -292,11 +302,9 @@ printLongListing(const StringVec& filenames)
             if (GridBase::grid<PointDataGrid>(grid))
                 PointStats::inspectPoints(grid, pointStats);
         }
-        // Print out point stats only if there are any points
-        if (pointStats.total != 0) PointStats::printPointStats(pointStats);
 
-        }
-#endif
+        PointStats::printPointStats(pointStats);
+
     }
 }
 
