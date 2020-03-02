@@ -138,7 +138,7 @@ if OPENVDB_ABI_VERSION_NUMBER >= 6
 I'd move this to the start of the loop so the shared pointer is only copied once, immediately followed by a check
 
 
-#2
+#2 DONE
   // Check for grid type, inspect points if this is a point grid
             const openvdb::GridBase::ConstPtr grid = *it;
             Name gridType = grid->type();
@@ -317,11 +317,8 @@ printLongListing(const StringVec& filenames)
                 firstGrid = false;
             }
 #if OPENVDB_ABI_VERSION_NUMBER >= 6
-            // Check for grid type, inspect points if this is a point grid
-            Name gridType = grid->type();
-            auto ptr = GridBase::grid<PointDataGrid>(grid);
-            std::cout << ptr<< std::endl;
-            if (gridType.find("ptdata") != std::string::npos)
+            // Inspect points if this is a point grid
+            if (GridBase::grid<PointDataGrid>(grid))
                 PointStats::inspectPoints(grid, pointStats);
         }
         // Print out point stats only if there are any points
@@ -472,17 +469,17 @@ main(int argc, char *argv[])
         openvdb::initialize();
 
         /// @todo Remove the following at some point:
-        // openvdb::Grid<openvdb::tree::Tree4<bool, 4, 3, 3>::Type>::registerGrid();
-        // openvdb::Grid<openvdb::tree::Tree4<float, 4, 3, 3>::Type>::registerGrid();
-        // openvdb::Grid<openvdb::tree::Tree4<double, 4, 3, 3>::Type>::registerGrid();
-        // openvdb::Grid<openvdb::tree::Tree4<int32_t, 4, 3, 3>::Type>::registerGrid();
-        // openvdb::Grid<openvdb::tree::Tree4<int64_t, 4, 3, 3>::Type>::registerGrid();
-        // openvdb::Grid<openvdb::tree::Tree4<openvdb::Vec2i, 4, 3, 3>::Type>::registerGrid();
-        // openvdb::Grid<openvdb::tree::Tree4<openvdb::Vec2s, 4, 3, 3>::Type>::registerGrid();
-        // openvdb::Grid<openvdb::tree::Tree4<openvdb::Vec2d, 4, 3, 3>::Type>::registerGrid();
-        // openvdb::Grid<openvdb::tree::Tree4<openvdb::Vec3i, 4, 3, 3>::Type>::registerGrid();
-        // openvdb::Grid<openvdb::tree::Tree4<openvdb::Vec3f, 4, 3, 3>::Type>::registerGrid();
-        // openvdb::Grid<openvdb::tree::Tree4<openvdb::Vec3d, 4, 3, 3>::Type>::registerGrid();
+        openvdb::Grid<openvdb::tree::Tree4<bool, 4, 3, 3>::Type>::registerGrid();
+        openvdb::Grid<openvdb::tree::Tree4<float, 4, 3, 3>::Type>::registerGrid();
+        openvdb::Grid<openvdb::tree::Tree4<double, 4, 3, 3>::Type>::registerGrid();
+        openvdb::Grid<openvdb::tree::Tree4<int32_t, 4, 3, 3>::Type>::registerGrid();
+        openvdb::Grid<openvdb::tree::Tree4<int64_t, 4, 3, 3>::Type>::registerGrid();
+        openvdb::Grid<openvdb::tree::Tree4<openvdb::Vec2i, 4, 3, 3>::Type>::registerGrid();
+        openvdb::Grid<openvdb::tree::Tree4<openvdb::Vec2s, 4, 3, 3>::Type>::registerGrid();
+        openvdb::Grid<openvdb::tree::Tree4<openvdb::Vec2d, 4, 3, 3>::Type>::registerGrid();
+        openvdb::Grid<openvdb::tree::Tree4<openvdb::Vec3i, 4, 3, 3>::Type>::registerGrid();
+        openvdb::Grid<openvdb::tree::Tree4<openvdb::Vec3f, 4, 3, 3>::Type>::registerGrid();
+        openvdb::Grid<openvdb::tree::Tree4<openvdb::Vec3d, 4, 3, 3>::Type>::registerGrid();
 
         if (stats) {
             printLongListing(filenames);
