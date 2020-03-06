@@ -98,13 +98,10 @@ printPointStats(const PointStats& pointStats)
     for(auto it=pointStats.attribs.begin(); it!=pointStats.attribs.end(); ++it){
         auto attr = it->second;
         std::cout << "  name: " << it->first << '\n';
-        std::cout << INDENT << "type: " << attr.type << '\n';
+        std::cout << INDENT << "valueType: " << attr.type << '\n';
         std::cout << INDENT << "codec: " << attr.codec << '\n';
-        std::cout << INDENT << "hidden: " << attr.array.hidden << '\n';
-        std::cout << INDENT << "transient: " << attr.array.transient << '\n';
-        std::cout << INDENT << "group: " << attr.array.group << '\n';
-        std::cout << INDENT << "string: " << attr.array.string << '\n';
-        std::cout << INDENT << "constantStride: " << attr.array.constantStride << '\n';
+        std::cout << INDENT << "stride: " << attr.array.stride << '\n';
+        // TODO: add hidden, transient, uniform in verbose mode
     }
     std::cout << "Point groups:" << '\n';
     for (auto it=pointStats.groups.begin(); it!=pointStats.groups.end(); ++it){
